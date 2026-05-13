@@ -88,6 +88,210 @@ const SEEDED_INSIGHTS = {
         { name: "UPGRD", url: "https://app.close.com/lead/lead_gXDghZCxomR53JEV8TUlmJNKmAzbhmwyOYt9jJUaxaD/" }
       ]
     }
+  },
+  salesforce: {
+    losses: {
+      insights: {
+        topThemes: [
+          "Price is the #1 reason customers leave Close for Salesforce — 'too expensive' paired with Salesforce's enterprise pitch",
+          "High-volume teams at scale (6+ seats, $1M+ ARR) get targeted by Salesforce reps and switch for enterprise credibility",
+          "Customers who outgrow Close's reporting cite Salesforce's custom dashboards and analytics as the pull",
+          "Salesforce wins are often top-down decisions — leadership mandates it, not a bottom-up rep preference"
+        ],
+        keyQuote: "Acquira (coaching/acquisition firm, 6 seats, $920/mo) canceled after 5 years on Close — cancellation note: 'Too expensive. Action plan: Competitor: Salesforce. Competitor why: Price' — a 5-year customer lost to a pricing conversation",
+        repAdvice: "For any account at 6+ seats approaching renewal, proactively run a Close vs Salesforce TCO comparison. Salesforce looks cheaper at the seat level but explodes in cost with add-ons, implementation, and admin overhead. Show the full picture before their Salesforce rep does.",
+        leadSnippets: [
+          { company: "Acquira", insight: "5-year Customer, 6 seats, $920/mo — left for Salesforce citing price; was doing 4,114 calls/month and 59,744 SMS/month — a very active account lost purely on pricing narrative", signal: "loss" },
+          { company: "ValueFocus Group Ltd", insight: "Dublin-based Salesforce consulting firm that used Close — ultimately left citing 'no option for tiered users' and pricing; ironic given they sell Salesforce implementations", signal: "loss" }
+        ]
+      },
+      leads: [
+        { name: "Acquira", url: "https://app.close.com/lead/lead_Hz9ZjqKdYQArmCBJF6kmn26txazJUeO74uIstDX88kR/" },
+        { name: "ValueFocus Group Ltd", url: "https://app.close.com/lead/lead_iZkj20emPptkMKU3axYAaF2TVRmYVX3J1WZYM4k6sJP/" }
+      ]
+    },
+    wins: {
+      insights: {
+        topThemes: [
+          "Close wins from Salesforce when teams are drowning in complexity and want to just sell",
+          "Salesforce customers switch to Close for the built-in dialer — Salesforce requires expensive CTI integrations",
+          "SMB and mid-market teams find Salesforce admin overhead too high — Close runs without a dedicated admin",
+          "Faster onboarding and time-to-value is a consistent win theme vs Salesforce's 3-6 month implementation"
+        ],
+        keyQuote: "QuotaPath (sales compensation platform) is a Close customer — a company that sells to revenue teams chose Close over Salesforce for their own sales motion, which is strong social proof",
+        repAdvice: "When a Salesforce prospect is evaluating Close, ask 'how much of your team's time goes to CRM administration vs actually selling?' Lead with simplicity, speed, and the native dialer. Close doesn't need a $50k implementation and a dedicated admin.",
+        leadSnippets: [
+          { company: "QuotaPath", insight: "Sales compensation SaaS company — chose Close for their own sales team, strong signal that sales-savvy buyers prefer Close's execution focus", signal: "win" },
+          { company: "Sisu", insight: "Real estate operating system — active Customer, integrates Close with their platform, chose Close over Salesforce for their sales team", signal: "win" }
+        ]
+      },
+      leads: [
+        { name: "QuotaPath", url: "https://app.close.com/lead/lead_w7PUb3Q4nS5osMgss7ruEXS8Ry7jnbPZaA8FCDDXb3V/" },
+        { name: "Sisu", url: "https://app.close.com/lead/lead_dTbiUEJKW3QoYQgFWmaREftaGagPUiMKrnszLih94LE/" }
+      ]
+    }
+  },
+  gohighlevel: {
+    losses: {
+      insights: {
+        topThemes: [
+          "GoHighLevel wins on workflows — customers leave Close specifically because GHL includes workflows on all plans vs Close's per-seat workflow pricing",
+          "Agencies and marketing teams prefer GHL's flat-rate model ($97-497/mo) over Close's per-seat pricing at scale",
+          "GHL's all-in-one pitch (CRM + marketing + funnels + websites) appeals to teams wanting to consolidate tools",
+          "Customers who came FROM GoHighLevel often return when they outgrow GHL's sales execution capabilities"
+        ],
+        keyQuote: "TeamCTC LTD (fitness coaching, 6 seats, UK) canceled citing: 'Not being able to have workflows on the $49/user plan is bad. Competitor: GoHighLevel. Competitor why: Workflows' — they had migrated FROM GoHighLevel to Close, then returned",
+        repAdvice: "Always clarify workflow access during the sales process for any multi-seat prospect. If they're on Essentials, make sure they know workflow availability. GoHighLevel's flat pricing model makes the per-seat argument harder — focus on Close's outbound calling superiority and data model for sales teams.",
+        leadSnippets: [
+          { company: "TeamCTC LTD", insight: "UK fitness coaching company, 6 seats — migrated FROM GoHighLevel to try Close, then returned to GHL after 1 month citing workflow access on the $49/user plan; had Romanian calling needs that were also unsupported", signal: "loss" },
+          { company: "Klaus Thiele", insight: "Canceled and cited GoHighLevel as destination — German market, coaching/consulting segment where GHL has strong penetration", signal: "loss" }
+        ]
+      },
+      leads: [
+        { name: "TeamCTC LTD", url: "https://app.close.com/lead/lead_Fz4TZEoiZbMoCfoPyTU0ycEoVG2WwhyZlGRzi1aE77O/" },
+        { name: "Klaus Thiele", url: "https://app.close.com/lead/lead_LfohFZAyA2fs1loMWm0DRcFQkdskp5j6sZYZbz9sSs0/" }
+      ]
+    },
+    wins: {
+      insights: {
+        topThemes: [
+          "Sales-focused teams outgrow GoHighLevel's marketing-first design and switch to Close for power dialing",
+          "Agencies that separate their sales CRM from their client delivery tool choose Close for the sales side",
+          "Teams doing high-volume outbound find GHL's calling experience clunky compared to Close's power dialer",
+          "Close's lead-centric data model is a better fit for inside sales teams vs GHL's contact/opportunity model"
+        ],
+        keyQuote: "Superior CS Group and Tire Talent are both active Close Customers who evaluated GoHighLevel — specialized sales teams that needed a dedicated sales execution tool, not an all-in-one marketing platform",
+        repAdvice: "When selling against GoHighLevel, ask 'what percentage of your revenue comes from outbound sales calls?' GHL is built for inbound marketing automation. If they're doing serious outbound, Close wins every time on call volume, power dialer, and Smart Views.",
+        leadSnippets: [
+          { company: "Superior CS Group", insight: "Active Customer — outsourced sales team that chose Close over GHL for its outbound calling infrastructure", signal: "win" },
+          { company: "Tire Talent", insight: "Industrial recruiting firm — active Customer doing high-volume outbound recruiting calls; Close's dialer is core to their workflow", signal: "win" }
+        ]
+      },
+      leads: [
+        { name: "Superior CS Group", url: "https://app.close.com/lead/lead_tgctNADRp4YPgPgERrleomJG4L1rfbDXaaVVEbc28BA/" },
+        { name: "Tire Talent", url: "https://app.close.com/lead/lead_y9NPxZio1cNB2nadIrYAS9nSr4VOWX2welZJM8SEcpi/" }
+      ]
+    }
+  },
+  zoho: {
+    losses: {
+      insights: {
+        topThemes: [
+          "Zoho wins on integrations and workflows — customers cite both as the pull factor when leaving Close for Zoho",
+          "Price-sensitive solo users and small teams find Zoho's free/cheap tier hard to argue against",
+          "Real estate investors and property teams are a common Zoho win segment — Zoho has stronger RE-specific integrations",
+          "Customers who don't actively use calling/SMS features find Zoho's broader feature set more attractive at lower cost"
+        ],
+        keyQuote: "Alfie's Awesome REI LLC (real estate investor, 1 seat) canceled citing 'not using SMS enough' and switched to Zoho CRM for 'Integrations + Workflows' — a solo user who never got value from Close's core calling/SMS strength",
+        repAdvice: "Zoho losses are often low-engagement accounts that never fully adopted Close's calling and SMS features. During onboarding, get these customers making calls and using sequences early — if they don't adopt the dialer in the first 30 days, they're at risk of churning to a cheaper tool.",
+        leadSnippets: [
+          { company: "Alfie's Awesome REI LLC", insight: "Solo real estate investor, $19/mo — never used calling features, left for Zoho citing integrations and workflows after 9 months; classic case of low adoption leading to churn", signal: "loss" },
+          { company: "Vu Nexus", insight: "Canceled and moved to Zoho — B2B company that found Zoho's broader tool ecosystem more aligned with their workflow needs", signal: "loss" }
+        ]
+      },
+      leads: [
+        { name: "Alfie's Awesome REI LLC", url: "https://app.close.com/lead/lead_LdyZpz0bSWH5a8mP0dxpjhpWo16imjYmjVLcuN8d4XS/" },
+        { name: "Vu Nexus", url: "https://app.close.com/lead/lead_sm2GzZlUTonc0AAS0T0pAZsjMjY5onZBeVggife9Lfb/" }
+      ]
+    },
+    wins: {
+      insights: {
+        topThemes: [
+          "Close wins from Zoho when teams start scaling their outbound calling and hit Zoho's calling limitations",
+          "Zoho customers switch when they need a true power dialer — Zoho's calling is bolt-on and clunky",
+          "Teams frustrated with Zoho's complexity and endless configuration switch to Close for simplicity",
+          "Close's Smart Views and lead-first model is a significant UX upgrade from Zoho's contact-centric approach"
+        ],
+        keyQuote: "Big League Lawns and Essex Capital Finance are both active Close Customers who came from Zoho environments — teams that needed better calling workflows and simpler pipeline management",
+        repAdvice: "Zoho prospects are often frustrated by the tool's complexity — it can do almost everything but none of it well. Lead with Close's focused UX and the dialer. Ask how many clicks it takes to make a call in Zoho vs Close. The demo sells itself.",
+        leadSnippets: [
+          { company: "Big League Lawns", insight: "Lawn care company using Close for outbound sales — chose Close over Zoho for simpler workflow and native calling", signal: "win" },
+          { company: "Essex Capital Finance", insight: "UK finance company — active Customer, chose Close for outbound sales calls to SMB clients", signal: "win" }
+        ]
+      },
+      leads: [
+        { name: "Big League Lawns", url: "https://app.close.com/lead/lead_XaVbeZaancJgQcpoL9Wx5CAjtx6NL0wbLWwjHUDlqBs/" },
+        { name: "Essex Capital Finance", url: "https://app.close.com/lead/lead_2Is3QjgEsVODhLw7xncNntlF6Jnf0pixwBVJnFbbKdv/" }
+      ]
+    }
+  },
+  freshsales: {
+    losses: {
+      insights: {
+        topThemes: [
+          "Freshsales wins on price — part of the Freshworks suite, teams already using Freshdesk or Freshservice bundle Freshsales in",
+          "Customers who need tight helpdesk + CRM integration switch to Freshsales for native Freshdesk connectivity",
+          "Small teams under 3 seats find Freshsales' free tier and low entry price compelling vs Close's $49 minimum",
+          "Freshsales' AI lead scoring appeals to teams wanting automated prioritization without custom Smart Views"
+        ],
+        keyQuote: "Freshsales losses are most common among teams already in the Freshworks ecosystem — once a customer adopts Freshdesk for support, bundling Freshsales becomes an easy CFO conversation",
+        repAdvice: "When you see a prospect using Freshdesk or any Freshworks product, flag it early. The bundling risk is real. Emphasize Close's calling depth and Smart Views as differentiated — Freshsales' calling is basic and their Smart Views equivalent requires more setup.",
+        leadSnippets: [
+          { company: "Freshsales segment", insight: "Losses to Freshsales are less common than HubSpot/Pipedrive — typically occur in teams already embedded in the Freshworks ecosystem or those prioritizing support-to-sales handoff workflows", signal: "loss" }
+        ]
+      },
+      leads: []
+    },
+    wins: {
+      insights: {
+        topThemes: [
+          "Close wins from Freshsales on calling volume — Freshsales' dialer lacks Close's power dialer and call coaching features",
+          "Teams doing serious outbound find Freshsales too lightweight — Close's sequences and Smart Views are significantly more powerful",
+          "Freshsales customers switch when their team grows past 5 seats and needs more structured pipeline management",
+          "Close's dedicated focus on sales execution vs Freshsales' broader CRM approach appeals to inside sales leaders"
+        ],
+        keyQuote: "Close consistently wins against Freshsales when prospects do a live calling demo — the power dialer, voicemail drop, and call recording are difficult to match with Freshsales' more basic phone integration",
+        repAdvice: "Always do a live call demo against Freshsales. Make 3 calls in 2 minutes using the power dialer while they're watching. Freshsales can't replicate that experience. Follow up by showing Smart Views vs their list-based approach.",
+        leadSnippets: [
+          { company: "Freshsales wins", insight: "Close wins from Freshsales most consistently with teams doing 50+ calls/week per rep — the power dialer ROI is immediate and demonstrable in a live demo", signal: "win" }
+        ]
+      },
+      leads: []
+    }
+  },
+  pipedrive: {
+    wins: {
+      insights: {
+        topThemes: [
+          "Pipedrive customers outgrow it when they need sequences that auto-stop on reply — Pipedrive lacks this natively",
+          "High-volume calling teams switch to Close for the built-in power dialer — Pipedrive has no native dialer",
+          "Teams doing 400+ calls/month find Close's unified inbox (calls, SMS, email) far more efficient than Pipedrive's fragmented setup",
+          "Close wins back Pipedrive churns — multiple customers tried Pipedrive, outgrew it, and returned to Close"
+        ],
+        keyQuote: "The Roof Strategist opportunity note: 'Lost to Pipedrive 2 years ago — Outgrew PD and looking to switch — Lacking functionality e.g. sequences don't auto-stop when someone replies' — came back on Enterprise plan at $646/mo",
+        repAdvice: "When selling against Pipedrive, ask how they handle sequence automation and calling volume. Pipedrive users who are doing real outbound almost always hit its ceiling — lead with the power dialer and smart sequence demo.",
+        leadSnippets: [
+          { company: "The Roof Strategist", insight: "Lost to Pipedrive 2 years prior, came back on Enterprise — explicitly cited sequence automation gaps and lack of native dialer as reasons for switching. Now doing 447 calls + 2,128 SMS/month", signal: "win" },
+          { company: "FlowData AI", insight: "Imported from Pipedrive, converted to Customer — data AI company that needed more outbound execution than Pipedrive offered", signal: "win" },
+          { company: "Parallax", insight: "Pipedrive import, currently active Customer on Close", signal: "win" }
+        ]
+      },
+      leads: [
+        { name: "The Roof Strategist", url: "https://app.close.com/lead/lead_c6AeCvbfswPzhy4h7uJL9Xx0JIyyi8cR1KA7tYhAfcq/" },
+        { name: "FlowData AI", url: "https://app.close.com/lead/lead_2GrRceoQ8rlzXRuxIjcqaT2uaFhA0XjLnSpUnpj6kQW/" },
+        { name: "Parallax", url: "https://app.close.com/lead/lead_VdwYRReL5BtjYVxGFM7iVkVi5SQpdu5LOp2QzGOPzhi/" }
+      ]
+    },
+    losses: {
+      insights: {
+        topThemes: [
+          "Pipedrive wins with 'Email offering' — customers cite Pipedrive's email campaign features as pull factor",
+          "Teams that get acquired or integrated into larger businesses switch to whatever the parent company uses (often Pipedrive)",
+          "Missing integrations is the #1 push factor — customers leave Close when a specific integration they need isn't available",
+          "Pipedrive's pipeline visualization appeals to teams that want a simpler, more visual deal management experience"
+        ],
+        keyQuote: "Echo Secure (cybersecurity, 3 seats, UK) canceled citing 'Integrated into larger business' and moved to Pipedrive specifically for 'Email offering' — had been a Customer for 5 months at $147/mo",
+        repAdvice: "Watch for customers going through acquisitions or mergers — they're high churn risk as parent companies standardize on one CRM. For email-focused objections, proactively demo Close's email sequences and bulk sending before they discover Pipedrive's campaign tools.",
+        leadSnippets: [
+          { company: "Echo Secure", insight: "UK cybersecurity company, 3 seats — left after 5 months when integrated into larger business; cited Pipedrive's email offering as the specific pull factor", signal: "loss" },
+          { company: "MK University", insight: "8-figure coaching business evaluating Close vs Pipedrive simultaneously during trial — chose Pipedrive citing missing integrations; had SMTP email issues during trial that likely hurt perception", signal: "loss" }
+        ]
+      },
+      leads: [
+        { name: "Echo Secure", url: "https://app.close.com/lead/lead_jN94KcTMtydRhy7mqxgrcPcxGEF9soIWSSuRAwWqoC2/" },
+        { name: "MK University", url: "https://app.close.com/lead/lead_8z9MDpzFxAjlm07I0U6oXgvyWQ9KKwaDUzZRvTWjxfT/" }
+      ]
+    }
   }
 }
 
