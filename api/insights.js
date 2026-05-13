@@ -6,97 +6,88 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
   const { competitor, type } = req.body
-  // type = 'wins' | 'losses'
-
   const CLOSE_KEY = process.env.CLOSE_API_KEY
   const ANTHROPIC_KEY = process.env.VITE_ANTHROPIC_API_KEY
 
   if (!CLOSE_KEY) return res.status(500).json({ error: 'CLOSE_API_KEY not configured' })
 
   const authHeader = `Basic ${Buffer.from(CLOSE_KEY + ':').toString('base64')}`
-  const twelveMonthsAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
   try {
-    // Build the right search query based on wins vs losses
-    let searchQuery
-    if (type === 'wins') {
-      searchQuery = `customers who imported from ${competitor} CRM and are current paying customers status Customer`
-    } else {
-      searchQuery = `canceled customers in the last 12 months who left for ${competitor} as competitor`
-    }
+    // Use the simple leads search API which we know works
+    const statusFilter = type === 'wins' ? 'Customer' : 'Canceled'
+    const searchUrl = `https://api.close.com/api/v1/lead/?query=${encodeURIComponent(competitor)}&_fields=id,display_name,name,status_label,url&_limit=25`
 
-    // Search Close for matching leads
-    const searchRes = await fetch('https://api.close.com/api/v1/search/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
-      body: JSON.stringify({
-        query: {
-          type: 'and',
-          queries: [
-            { type: 'text', query: competitor },
-            {
-              type: 'field_condition',
-              field: { type: 'regular_field', field_name: 'status_label' },
-              condition: {
-                type: 'text',
-                mode: 'full_words',
-                value: type === 'wins' ? 'Customer' : 'Canceled'
-              }
-            }
-          ]
-        },
-        results_limit: 8,
-        cursor: null,
-      }),
+    const searchRes = await fetch(searchUrl, {
+      headers: { 'Authorization': authHeader }
     })
 
     const searchData = await searchRes.json()
-    const leadIds = (searchData.results || []).map(r => r.id).slice(0, 8)
+    const allLeads = searchData.data || []
 
-    if (leadIds.length === 0) {
-      return res.status(200).json({ insights: null, leads: [], message: 'No matching leads found' })
+    // Filter by correct status
+    const filteredLeads = allLeads.filter(l => l.status_label === statusFilter).slice(0, 8)
+
+    if (filteredLeads.length === 0) {
+      return res.status(200).json({
+        insights: null,
+        leads: [],
+        message: `No ${statusFilter} leads found mentioning ${competitor} — try refreshing or check that your Close API key has read access.`
+      })
     }
 
-    // Fetch full lead details for each
+    // Fetch full lead details for each match
     const leadDetails = await Promise.all(
-      leadIds.map(async id => {
-        const r = await fetch(`https://api.close.com/api/v1/lead/${id}/`, {
-          headers: { 'Authorization': authHeader }
-        })
-        const d = await r.json()
-        // Extract the most relevant summary text
-        const summaries = d.display_name ? [] : (d.summaries || [])
-        return {
-          id,
-          name: d.display_name || d.name || id,
-          status: d.status_label,
-          url: d.url,
-          summary: summaries.slice(0, 6).join('\n\n').substring(0, 3000)
+      filteredLeads.map(async lead => {
+        try {
+          const r = await fetch(`https://api.close.com/api/v1/lead/${lead.id}/`, {
+            headers: { 'Authorization': authHeader }
+          })
+          const d = await r.json()
+          const summaries = d.summaries || []
+          return {
+            id: lead.id,
+            name: d.name || lead.name || lead.display_name || lead.id,
+            status: lead.status_label,
+            summary: summaries.slice(0, 5).join('\n\n').substring(0, 2500)
+          }
+        } catch {
+          return { id: lead.id, name: lead.name || lead.id, status: lead.status_label, summary: '' }
         }
       })
     )
 
-    // Now synthesize with Claude
+    const validLeads = leadDetails.filter(l => l.summary.length > 50)
+
+    if (validLeads.length === 0) {
+      return res.status(200).json({
+        insights: null,
+        leads: filteredLeads.map(l => ({ name: l.name || l.display_name, url: `https://app.close.com/lead/${l.id}/` })),
+        message: 'Leads found but no detailed activity data available.'
+      })
+    }
+
+    // Synthesize with Claude
     const prompt = `You are analyzing Close CRM data to generate competitive intelligence insights.
 
 Competitor: ${competitor}
-Signal type: ${type === 'wins' ? 'WINS — customers who came FROM ' + competitor + ' and stayed with Close' : 'LOSSES — customers who LEFT Close FOR ' + competitor}
+Signal type: ${type === 'wins' ? 'WINS — customers who came FROM ' + competitor + ' and stayed with Close (status: Customer)' : 'LOSSES — customers who LEFT Close FOR ' + competitor + ' (status: Canceled)'}
 
-Here are the real lead summaries from Close CRM (including cancellation notes, call transcripts, emails, and support tickets):
+Here are real lead summaries from Close CRM including cancellation notes, call transcripts, emails, and support tickets:
 
-${leadDetails.map((l, i) => `--- Lead ${i + 1}: ${l.name} ---\n${l.summary}`).join('\n\n')}
+${validLeads.map((l, i) => `--- Lead ${i + 1}: ${l.name} ---\n${l.summary}`).join('\n\n')}
 
-Based on this real data, generate a JSON response with:
+Based on this real data, return ONLY a JSON object:
 {
-  "topThemes": ["3-4 specific recurring themes you spotted, with evidence"],
-  "keyQuote": "The single most revealing quote or data point from the leads above (cite which company)",
-  "repAdvice": "1-2 sentence advice for a sales rep based on these patterns",
+  "topThemes": ["3-4 specific recurring themes with evidence from the data above"],
+  "keyQuote": "The single most revealing quote or data point (cite which company it came from)",
+  "repAdvice": "1-2 sentence actionable advice for a Close sales rep based on these patterns",
   "leadSnippets": [
-    { "company": "company name", "insight": "1 sentence specific insight from their data", "signal": "win or loss" }
+    { "company": "exact company name from data", "insight": "1 specific insight from their data", "signal": "${type === 'wins' ? 'win' : 'loss'}" }
   ]
 }
 
-Be specific — use actual company names, actual feature names mentioned, actual reasons. Do not generalize. Return only valid JSON.`
+Be specific — use actual company names, actual features mentioned, actual cancellation reasons. Do not generalize. Return only valid JSON, no markdown.`
 
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -115,10 +106,14 @@ Be specific — use actual company names, actual feature names mentioned, actual
     const claudeData = await claudeRes.json()
     const text = (claudeData.content || []).filter(b => b.type === 'text').map(b => b.text).join('')
     const match = text.match(/\{[\s\S]*\}/)
-    if (!match) return res.status(200).json({ insights: null, leads: leadDetails, rawText: text })
+
+    if (!match) return res.status(200).json({ insights: null, leads: validLeads.map(l => ({ name: l.name, url: `https://app.close.com/lead/${l.id}/` })), rawText: text })
 
     const insights = JSON.parse(match[0])
-    return res.status(200).json({ insights, leads: leadDetails.map(l => ({ name: l.name, url: `https://app.close.com/lead/${l.id}/` })) })
+    return res.status(200).json({
+      insights,
+      leads: validLeads.map(l => ({ name: l.name, url: `https://app.close.com/lead/${l.id}/` }))
+    })
 
   } catch (error) {
     return res.status(500).json({ error: error.message })
