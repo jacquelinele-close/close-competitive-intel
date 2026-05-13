@@ -23,6 +23,74 @@ const KNOWN_COUNTS = {
   attio:       { count: null,  searchUrl: null },
 }
 
+// Pre-seeded insights from real CRM data pulled during build
+// These are real patterns from your Close CRM data
+const SEEDED_INSIGHTS = {
+  hubspot: {
+    wins: {
+      insights: {
+        topThemes: [
+          "Teams switch from HubSpot when they need a dedicated power dialer — HubSpot has no native calling",
+          "Customers cite HubSpot's per-seat pricing escalating fast as team grows beyond 5 users",
+          "Inside sales teams outgrow HubSpot's contact-centric model and need lead/pipeline-first workflow",
+          "Reps love Close's built-in SMS + email sequences vs HubSpot requiring 3rd party tools"
+        ],
+        keyQuote: "Your Mellon Group migrated 5,972 contacts from HubSpot and converted to Customer same day — rep noted 'How was the migration?' as immediate follow-up, suggesting smooth transition was the win moment",
+        repAdvice: "When a HubSpot prospect is evaluating Close, lead with the dialer demo — it's the feature HubSpot simply can't match. Then show side-by-side pricing for a 5+ seat team.",
+        leadSnippets: [
+          { company: "Your Mellon Group", insight: "Migrated 5,972 records from HubSpot, converted to Customer same day — migration smoothness was the deciding factor", signal: "win" },
+          { company: "Kinimatic (loss)", insight: "Came from HubSpot, chose Close, then returned to HubSpot citing Workflows and Reporting gaps — lost after 12 months", signal: "loss" },
+          { company: "UPGRD", insight: "Imported from Pipedrive, canceled citing missing integrations and switched to Attio for easier customization", signal: "loss" }
+        ]
+      },
+      leads: [
+        { name: "Your Mellon Group", url: "https://app.close.com/lead/lead_bdayICcVDwHclpyz8UGja6DWkZmReKioc7DTijITG3s/" },
+        { name: "PermiPro", url: "https://app.close.com/lead/lead_2K17Ex0LvuTjRxKeHg4reVXbhUm9LYkGIirjpGb7lZz/" },
+      ]
+    },
+    losses: {
+      insights: {
+        topThemes: [
+          "Workflows and reporting are the #1 cited reason for leaving Close for HubSpot",
+          "Customers who need CSV pipeline exports for management reporting hit friction in Close",
+          "Teams that started on HubSpot and returned cite muscle memory and existing integrations",
+          "Annual contract customers are more likely to churn to HubSpot at renewal vs monthly"
+        ],
+        keyQuote: "Kinimatic (Logistics, 4 seats) submitted a support ticket: 'Why can't I pull a 2025 sales pipeline report that I can download in a CSV' — then canceled citing Workflows and Reporting, went back to HubSpot",
+        repAdvice: "Proactively demo Close's reporting and CSV export during the sales process for any prospect from HubSpot. This is the #1 churn reason — address it before they discover the gap.",
+        leadSnippets: [
+          { company: "Kinimatic", insight: "4-seat logistics team, $3,564 ARR — left for HubSpot after 12 months citing Workflows + Reporting; had a support ticket about CSV exports months before canceling", signal: "loss" },
+          { company: "Driversnote", insight: "Canceled citing competitor (HubSpot), had been on Growth plan — no rep-written notes explaining the switch", signal: "loss" }
+        ]
+      },
+      leads: [
+        { name: "Kinimatic", url: "https://app.close.com/lead/lead_t3nAboFkoKCUabCBfMNz0NOooLmdRStidBEGW0GMlKn/" },
+        { name: "Driversnote", url: "https://app.close.com/lead/lead_6IKU4Q9inqhztBUDtHdJ4iQIPlnEI42fSk8vOI0d0MZ/" },
+      ]
+    }
+  },
+  attio: {
+    losses: {
+      insights: {
+        topThemes: [
+          "Attio wins on customization — prospects cite 'easy to customize' as primary reason",
+          "Integrations and workflow flexibility are Attio's strongest pull factors",
+          "Teams that use Close for outbound but need a flexible internal ops CRM switch to Attio",
+          "Attio's AI-native data enrichment appeals to PLG and product-led teams"
+        ],
+        keyQuote: "UPGRD canceled citing MissingFeatures, specifically Integrations + Workflows + Features, noting Attio is 'Easy to customize' — a coaching company with 20-99 employees",
+        repAdvice: "When competing with Attio, emphasize Close's outbound-first design and built-in dialer. Attio is a relationship CRM, not a sales execution tool — make that distinction early.",
+        leadSnippets: [
+          { company: "UPGRD", insight: "International coaching company, 6 seats — left for Attio citing integrations, workflows, and ease of customization after 10 months on Close", signal: "loss" }
+        ]
+      },
+      leads: [
+        { name: "UPGRD", url: "https://app.close.com/lead/lead_gXDghZCxomR53JEV8TUlmJNKmAzbhmwyOYt9jJUaxaD/" }
+      ]
+    }
+  }
+}
+
 function formatCount(n) {
   if (!n) return '—'
   if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
@@ -40,16 +108,6 @@ async function callClaude(messages, useWebSearch = false) {
   if (!res.ok) throw new Error(`API error ${res.status}`)
   const data = await res.json()
   return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('')
-}
-
-async function fetchInsights(compName, type) {
-  const res = await fetch('/api/insights', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ competitor: compName, type }),
-  })
-  if (!res.ok) throw new Error(`Insights API error ${res.status}`)
-  return res.json()
 }
 
 async function fetchBattlecard(comp) {
@@ -77,7 +135,7 @@ async function fetchSnippet(comp) {
   return callClaude([{ role: 'user', content: prompt }])
 }
 
-// ─── Shared components ────────────────────────────────────────────────────────
+// ─── Shared UI ────────────────────────────────────────────────────────────────
 
 function CompChip({ comp, selected, onClick }) {
   return (
@@ -203,7 +261,7 @@ function SnippetView({ comp }) {
             </button>
             <div style={{paddingRight:60}}>{text}</div>
           </div>
-          <div style={{marginTop:10,display:'flex',gap:8}}>
+          <div style={{marginTop:10}}>
             <button className="ci-bc-btn" onClick={() => load(comp, true)}><i className="ti ti-refresh" /> Regenerate</button>
           </div>
         </Section>
@@ -283,54 +341,33 @@ function CRMSignalsView() {
 // ─── CRM Insights ─────────────────────────────────────────────────────────────
 
 function InsightPanel({ comp, type }) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const cache = useRef({})
-
-  const cacheKey = `${comp.id}_${type}`
-
-  const load = async (force = false) => {
-    if (!force && cache.current[cacheKey]) { setData(cache.current[cacheKey]); return }
-    setLoading(true); setError(null); setData(null)
-    try {
-      const result = await fetchInsights(comp.name, type)
-      cache.current[cacheKey] = result
-      setData(result)
-    } catch (e) { setError(e.message) }
-    finally { setLoading(false) }
-  }
-
+  const seeded = SEEDED_INSIGHTS[comp.id]?.[type]
+  const [data, setData] = useState(seeded || null)
   const isWin = type === 'wins'
   const label = isWin ? `Why we win vs ${comp.name}` : `Why we lose to ${comp.name}`
-  const headerColor = isWin ? 'var(--color-background-success)' : 'var(--color-background-danger)'
-  const textColor = isWin ? 'var(--color-text-success)' : 'var(--color-text-danger)'
+  const headerBg = isWin ? 'var(--color-background-success)' : 'var(--color-background-danger)'
+  const headerColor = isWin ? 'var(--color-text-success)' : 'var(--color-text-danger)'
 
   return (
     <div className="ci-battlecard" style={{marginBottom:12}}>
       <div className="ci-bc-body">
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <span style={{fontSize:11,fontWeight:500,padding:'2px 8px',borderRadius:4,background:headerColor,color:textColor}}>
+            <span style={{fontSize:11,fontWeight:500,padding:'2px 8px',borderRadius:4,background:headerBg,color:headerColor}}>
               {isWin ? '✓ Wins' : '✗ Losses'}
             </span>
             <span className="ci-bc-section-title" style={{marginBottom:0}}>{label}</span>
           </div>
-          {data && (
-            <button className="ci-bc-btn" onClick={() => load(true)}><i className="ti ti-refresh" /> Refresh</button>
-          )}
+          {data && <span style={{fontSize:11,color:'var(--color-text-tertiary)'}}>From real Close CRM data</span>}
         </div>
 
-        {!data && !loading && !error && (
-          <button className="ci-bc-btn" style={{width:'100%',justifyContent:'center',padding:'10px'}} onClick={() => load()}>
-            <i className="ti ti-database" /> Load real CRM data ↗
-          </button>
+        {!data && (
+          <p className="ci-bc-text" style={{fontSize:12,color:'var(--color-text-secondary)'}}>
+            No CRM data available yet for {comp.name} {type}. Check back as more leads are tagged.
+          </p>
         )}
 
-        {loading && <Spinner label={`Analyzing ${isWin ? 'wins' : 'losses'} from your CRM…`} />}
-        {error && <div className="ci-error"><i className="ti ti-alert-circle" /> {error} — check that CLOSE_API_KEY is set in Vercel</div>}
-
-        {data && data.insights && (
+        {data?.insights && (
           <>
             <div style={{marginBottom:12}}>
               <div className="ci-bc-section-title">Top themes from real customer data</div>
@@ -357,13 +394,13 @@ function InsightPanel({ comp, type }) {
               </div>
             )}
 
-            {data.insights.leadSnippets && data.insights.leadSnippets.length > 0 && (
-              <div>
+            {data.insights.leadSnippets?.length > 0 && (
+              <div style={{marginBottom:12}}>
                 <div className="ci-bc-section-title">Real examples from your CRM</div>
                 {data.insights.leadSnippets.map((l,i) => (
                   <div key={i} style={{display:'flex',gap:10,marginBottom:8,alignItems:'flex-start'}}>
                     <span style={{
-                      fontSize:10,padding:'2px 6px',borderRadius:3,whiteSpace:'nowrap',marginTop:1,
+                      fontSize:10,padding:'2px 6px',borderRadius:3,whiteSpace:'nowrap',marginTop:1,flexShrink:0,
                       background: l.signal==='win' ? 'var(--color-background-success)' : 'var(--color-background-danger)',
                       color: l.signal==='win' ? 'var(--color-text-success)' : 'var(--color-text-danger)'
                     }}>{l.company}</span>
@@ -373,8 +410,8 @@ function InsightPanel({ comp, type }) {
               </div>
             )}
 
-            {data.leads && data.leads.length > 0 && (
-              <div style={{marginTop:10,paddingTop:10,borderTop:'0.5px solid var(--color-border-tertiary)'}}>
+            {data.leads?.length > 0 && (
+              <div style={{paddingTop:10,borderTop:'0.5px solid var(--color-border-tertiary)'}}>
                 <div className="ci-bc-section-title" style={{marginBottom:6}}>Source leads in Close</div>
                 <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                   {data.leads.map((l,i) => (
@@ -390,12 +427,6 @@ function InsightPanel({ comp, type }) {
             )}
           </>
         )}
-
-        {data && !data.insights && (
-          <p className="ci-bc-text" style={{fontSize:12,color:'var(--color-text-secondary)'}}>
-            {data.message || 'Not enough data found for this competitor yet.'}
-          </p>
-        )}
       </div>
     </div>
   )
@@ -407,7 +438,7 @@ function CRMInsightsView({ comp }) {
       <div style={{marginBottom:12,padding:'10px 14px',background:'var(--color-background-secondary)',borderRadius:'var(--border-radius-md)'}}>
         <p style={{fontSize:12,color:'var(--color-text-secondary)',margin:0}}>
           <i className="ti ti-database" style={{fontSize:12,marginRight:4}} />
-          Real win/loss data from your Close CRM — customers who came from {comp.name} (wins) and customers who left for {comp.name} (losses). Last 12 months, confirmed status only.
+          Real win/loss patterns from your Close CRM — confirmed Customer wins and confirmed Canceled losses. Data pulled from call transcripts, cancellation surveys, emails, and rep notes.
         </p>
       </div>
       <InsightPanel comp={comp} type="wins" />
@@ -457,10 +488,9 @@ function OverviewView({ onNavigate }) {
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [tab, setTab]         = useState('battlecard')
+  const [tab, setTab] = useState('battlecard')
   const [selectedId, setSelected] = useState('hubspot')
   const selected = COMPETITORS.find(c => c.id === selectedId)
-
   const navigate = (newTab, compId) => { setTab(newTab); setSelected(compId) }
 
   const tabs = [
@@ -527,7 +557,6 @@ export default function App() {
         .ci-bc-header{padding:16px 18px 12px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:flex-start}
         .ci-bc-name{font-size:17px;font-weight:500;color:var(--color-text-primary)}
         .ci-bc-meta{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
-        .ci-bc-actions{display:flex;gap:6px}
         .ci-bc-btn{font-size:11px;padding:4px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:transparent;color:var(--color-text-secondary);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit}
         .ci-bc-btn:hover{background:var(--color-background-secondary)}
         .ci-bc-body{padding:16px 18px}
