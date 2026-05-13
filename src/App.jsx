@@ -42,6 +42,16 @@ async function callClaude(messages, useWebSearch = false) {
   return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('')
 }
 
+async function fetchInsights(compName, type) {
+  const res = await fetch('/api/insights', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ competitor: compName, type }),
+  })
+  if (!res.ok) throw new Error(`Insights API error ${res.status}`)
+  return res.json()
+}
+
 async function fetchBattlecard(comp) {
   const prompt = `You are a competitive intelligence analyst for Close CRM (close.com) — a sales-focused CRM with built-in power dialer, SMS, email sequences, and Smart Views. Close's ICP is inside sales teams at SMBs and startups doing high-volume outbound.
 
@@ -66,6 +76,8 @@ async function fetchSnippet(comp) {
   const prompt = `You are a sales rep at Close CRM (close.com). Write a short, confident email snippet (3-5 sentences, no subject line, no greeting) that a Close sales rep can send to a prospect who is evaluating ${comp.name}. Focus on Close's biggest concrete advantage vs ${comp.name}. Make it punchy, natural, and sales-ready. Return only the snippet text, no extra commentary.`
   return callClaude([{ role: 'user', content: prompt }])
 }
+
+// ─── Shared components ────────────────────────────────────────────────────────
 
 function CompChip({ comp, selected, onClick }) {
   return (
@@ -94,11 +106,13 @@ function PriceBox({ label, value }) {
   )
 }
 
+// ─── Battlecard ───────────────────────────────────────────────────────────────
+
 function BattlecardView({ comp }) {
-  const [data, setData]       = useState(null)
+  const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState(null)
-  const [ts, setTs]           = useState(null)
+  const [error, setError] = useState(null)
+  const [ts, setTs] = useState(null)
   const cache = useRef({})
 
   const load = async (c, force = false) => {
@@ -106,9 +120,7 @@ function BattlecardView({ comp }) {
     setLoading(true); setError(null); setData(null)
     try {
       const d = await fetchBattlecard(c)
-      cache.current[c.id] = d
-      setData(d)
-      setTs(new Date().toLocaleTimeString())
+      cache.current[c.id] = d; setData(d); setTs(new Date().toLocaleTimeString())
     } catch (e) { setError(e.message) }
     finally { setLoading(false) }
   }
@@ -118,14 +130,11 @@ function BattlecardView({ comp }) {
   return (
     <>
       {loading && <Spinner label={`Fetching live intel for ${comp.name}…`} />}
-      {error   && <div className="ci-error"><i className="ti ti-alert-circle" /> {error}</div>}
-      {data    && (
+      {error && <div className="ci-error"><i className="ti ti-alert-circle" /> {error}</div>}
+      {data && (
         <div className="ci-battlecard">
           <div className="ci-bc-header">
-            <div>
-              <div className="ci-bc-name">{comp.name}</div>
-              <div className="ci-bc-meta">{comp.category} · {comp.icp}</div>
-            </div>
+            <div><div className="ci-bc-name">{comp.name}</div><div className="ci-bc-meta">{comp.category} · {comp.icp}</div></div>
             <button className="ci-bc-btn" onClick={() => load(comp, true)}><i className="ti ti-refresh" /> Refresh</button>
           </div>
           <div className="ci-bc-body">
@@ -158,11 +167,13 @@ function BattlecardView({ comp }) {
   )
 }
 
+// ─── Snippet ──────────────────────────────────────────────────────────────────
+
 function SnippetView({ comp }) {
-  const [text, setText]       = useState(null)
+  const [text, setText] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState(null)
-  const [copied, setCopied]   = useState(false)
+  const [error, setError] = useState(null)
+  const [copied, setCopied] = useState(false)
   const cache = useRef({})
 
   const load = async (c, force = false) => {
@@ -177,15 +188,14 @@ function SnippetView({ comp }) {
 
   const copy = () => {
     navigator.clipboard.writeText(text || '')
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+    setCopied(true); setTimeout(() => setCopied(false), 1500)
   }
 
   return (
     <>
       {loading && <Spinner label={`Generating snippet for ${comp.name}…`} />}
-      {error   && <div className="ci-error">{error}</div>}
-      {text    && (
+      {error && <div className="ci-error">{error}</div>}
+      {text && (
         <Section title={`Email snippet — Close vs ${comp.name}`}>
           <div className="ci-snippet-box" style={{position:'relative'}}>
             <button className="ci-copy-btn" onClick={copy}>
@@ -201,6 +211,8 @@ function SnippetView({ comp }) {
     </>
   )
 }
+
+// ─── CRM Signals ──────────────────────────────────────────────────────────────
 
 function CRMSignalsView() {
   const sorted = [...COMPETITORS].sort((a,b) => (KNOWN_COUNTS[b.id]?.count||0) - (KNOWN_COUNTS[a.id]?.count||0))
@@ -249,7 +261,6 @@ function CRMSignalsView() {
           })}
         </div>
       </div>
-
       <div className="ci-battlecard">
         <div className="ci-bc-body">
           <div className="ci-bc-section-title">What this tells your sales team</div>
@@ -268,6 +279,144 @@ function CRMSignalsView() {
     </div>
   )
 }
+
+// ─── CRM Insights ─────────────────────────────────────────────────────────────
+
+function InsightPanel({ comp, type }) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const cache = useRef({})
+
+  const cacheKey = `${comp.id}_${type}`
+
+  const load = async (force = false) => {
+    if (!force && cache.current[cacheKey]) { setData(cache.current[cacheKey]); return }
+    setLoading(true); setError(null); setData(null)
+    try {
+      const result = await fetchInsights(comp.name, type)
+      cache.current[cacheKey] = result
+      setData(result)
+    } catch (e) { setError(e.message) }
+    finally { setLoading(false) }
+  }
+
+  const isWin = type === 'wins'
+  const label = isWin ? `Why we win vs ${comp.name}` : `Why we lose to ${comp.name}`
+  const headerColor = isWin ? 'var(--color-background-success)' : 'var(--color-background-danger)'
+  const textColor = isWin ? 'var(--color-text-success)' : 'var(--color-text-danger)'
+
+  return (
+    <div className="ci-battlecard" style={{marginBottom:12}}>
+      <div className="ci-bc-body">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:11,fontWeight:500,padding:'2px 8px',borderRadius:4,background:headerColor,color:textColor}}>
+              {isWin ? '✓ Wins' : '✗ Losses'}
+            </span>
+            <span className="ci-bc-section-title" style={{marginBottom:0}}>{label}</span>
+          </div>
+          {data && (
+            <button className="ci-bc-btn" onClick={() => load(true)}><i className="ti ti-refresh" /> Refresh</button>
+          )}
+        </div>
+
+        {!data && !loading && !error && (
+          <button className="ci-bc-btn" style={{width:'100%',justifyContent:'center',padding:'10px'}} onClick={() => load()}>
+            <i className="ti ti-database" /> Load real CRM data ↗
+          </button>
+        )}
+
+        {loading && <Spinner label={`Analyzing ${isWin ? 'wins' : 'losses'} from your CRM…`} />}
+        {error && <div className="ci-error"><i className="ti ti-alert-circle" /> {error} — check that CLOSE_API_KEY is set in Vercel</div>}
+
+        {data && data.insights && (
+          <>
+            <div style={{marginBottom:12}}>
+              <div className="ci-bc-section-title">Top themes from real customer data</div>
+              <div className="ci-bc-pills">
+                {(data.insights.topThemes||[]).map((t,i) => (
+                  <span key={i} className={`ci-pill ${isWin?'win':'lose'}`}>{t}</span>
+                ))}
+              </div>
+            </div>
+
+            {data.insights.keyQuote && (
+              <div style={{marginBottom:12}}>
+                <div className="ci-bc-section-title">Most revealing signal</div>
+                <div className="ci-snippet-box" style={{fontSize:12,fontStyle:'italic'}}>
+                  "{data.insights.keyQuote}"
+                </div>
+              </div>
+            )}
+
+            {data.insights.repAdvice && (
+              <div style={{marginBottom:12}}>
+                <div className="ci-bc-section-title">Rep advice</div>
+                <p className="ci-bc-text" style={{fontSize:12}}>{data.insights.repAdvice}</p>
+              </div>
+            )}
+
+            {data.insights.leadSnippets && data.insights.leadSnippets.length > 0 && (
+              <div>
+                <div className="ci-bc-section-title">Real examples from your CRM</div>
+                {data.insights.leadSnippets.map((l,i) => (
+                  <div key={i} style={{display:'flex',gap:10,marginBottom:8,alignItems:'flex-start'}}>
+                    <span style={{
+                      fontSize:10,padding:'2px 6px',borderRadius:3,whiteSpace:'nowrap',marginTop:1,
+                      background: l.signal==='win' ? 'var(--color-background-success)' : 'var(--color-background-danger)',
+                      color: l.signal==='win' ? 'var(--color-text-success)' : 'var(--color-text-danger)'
+                    }}>{l.company}</span>
+                    <p style={{fontSize:12,color:'var(--color-text-primary)',lineHeight:1.5,margin:0}}>{l.insight}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {data.leads && data.leads.length > 0 && (
+              <div style={{marginTop:10,paddingTop:10,borderTop:'0.5px solid var(--color-border-tertiary)'}}>
+                <div className="ci-bc-section-title" style={{marginBottom:6}}>Source leads in Close</div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                  {data.leads.map((l,i) => (
+                    <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                      style={{fontSize:11,color:'var(--color-text-info)',textDecoration:'none',
+                        padding:'2px 8px',border:'0.5px solid var(--color-border-tertiary)',
+                        borderRadius:4,display:'flex',alignItems:'center',gap:3}}>
+                      {l.name} <i className="ti ti-external-link" style={{fontSize:10}} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {data && !data.insights && (
+          <p className="ci-bc-text" style={{fontSize:12,color:'var(--color-text-secondary)'}}>
+            {data.message || 'Not enough data found for this competitor yet.'}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function CRMInsightsView({ comp }) {
+  return (
+    <div>
+      <div style={{marginBottom:12,padding:'10px 14px',background:'var(--color-background-secondary)',borderRadius:'var(--border-radius-md)'}}>
+        <p style={{fontSize:12,color:'var(--color-text-secondary)',margin:0}}>
+          <i className="ti ti-database" style={{fontSize:12,marginRight:4}} />
+          Real win/loss data from your Close CRM — customers who came from {comp.name} (wins) and customers who left for {comp.name} (losses). Last 12 months, confirmed status only.
+        </p>
+      </div>
+      <InsightPanel comp={comp} type="wins" />
+      <InsightPanel comp={comp} type="losses" />
+    </div>
+  )
+}
+
+// ─── Overview ─────────────────────────────────────────────────────────────────
 
 function OverviewView({ onNavigate }) {
   return (
@@ -289,8 +438,9 @@ function OverviewView({ onNavigate }) {
               </div>
             )}
             <div style={{marginTop:8,display:'flex',gap:6,flexWrap:'wrap'}}>
-              <button className="ci-bc-btn" onClick={() => onNavigate('battlecard', c.id)}><i className="ti ti-id" /> View battlecard</button>
-              <button className="ci-bc-btn" onClick={() => onNavigate('snippet', c.id)}><i className="ti ti-mail" /> Get snippet</button>
+              <button className="ci-bc-btn" onClick={() => onNavigate('battlecard', c.id)}><i className="ti ti-id" /> Battlecard</button>
+              <button className="ci-bc-btn" onClick={() => onNavigate('snippet', c.id)}><i className="ti ti-mail" /> Snippet</button>
+              <button className="ci-bc-btn" onClick={() => onNavigate('insights', c.id)}><i className="ti ti-chart-bar" /> CRM insights</button>
               {KNOWN_COUNTS[c.id]?.searchUrl && (
                 <a href={KNOWN_COUNTS[c.id].searchUrl} target="_blank" rel="noopener noreferrer" className="ci-bc-btn" style={{textDecoration:'none'}}>
                   <i className="ti ti-external-link" /> View in Close
@@ -304,8 +454,10 @@ function OverviewView({ onNavigate }) {
   )
 }
 
+// ─── Root ─────────────────────────────────────────────────────────────────────
+
 export default function App() {
-  const [tab, setTab]             = useState('battlecard')
+  const [tab, setTab]         = useState('battlecard')
   const [selectedId, setSelected] = useState('hubspot')
   const selected = COMPETITORS.find(c => c.id === selectedId)
 
@@ -315,8 +467,11 @@ export default function App() {
     { id: 'battlecard', label: 'Battlecards' },
     { id: 'snippet',    label: 'Snippets' },
     { id: 'crm',        label: 'CRM Signals' },
+    { id: 'insights',   label: 'CRM Insights' },
     { id: 'overview',   label: 'Overview' },
   ]
+
+  const showChips = !['overview','crm'].includes(tab)
 
   return (
     <>
@@ -336,7 +491,7 @@ export default function App() {
         ))}
       </div>
 
-      {tab !== 'overview' && tab !== 'crm' && (
+      {showChips && (
         <div className="ci-overview-grid">
           {COMPETITORS.map(c => <CompChip key={c.id} comp={c} selected={c.id===selectedId} onClick={id => setSelected(id)} />)}
         </div>
@@ -345,6 +500,7 @@ export default function App() {
       {tab === 'battlecard' && <BattlecardView key={selectedId} comp={selected} />}
       {tab === 'snippet'    && <SnippetView    key={selectedId} comp={selected} />}
       {tab === 'crm'        && <CRMSignalsView />}
+      {tab === 'insights'   && <CRMInsightsView key={selectedId} comp={selected} />}
       {tab === 'overview'   && <OverviewView   onNavigate={navigate} />}
 
       <style>{`
