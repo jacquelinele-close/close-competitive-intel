@@ -1,0 +1,1 @@
+# close-competitive-intel
