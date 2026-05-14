@@ -320,15 +320,25 @@ async function callClaude(messages, useWebSearch = false) {
 async function fetchBattlecard(comp) {
   const prompt = `You are a competitive intelligence analyst for Close CRM (close.com) — a sales-focused CRM with built-in power dialer, SMS, email sequences, and Smart Views. Close's ICP is inside sales teams at SMBs and startups doing high-volume outbound.
 
+Before generating the battlecard, search the following sources for current intelligence on ${comp.name}:
+1. G2 reviews — search "site:g2.com ${comp.name} reviews" to find what real users say, common complaints, and pros/cons
+2. Reddit discussions — search "reddit ${comp.name} CRM" to find unfiltered honest opinions from sales/ops people
+3. LinkedIn — search "${comp.name} CRM" for recent product announcements, feature launches, and executive posts
+4. General web — any recent news, pricing changes, or product updates about ${comp.name}
+
+Use what you find to make the battlecard as specific and current as possible.
+
 Generate a battlecard for ${comp.name} (${comp.category}). Return ONLY a JSON object with these exact keys:
 {
-  "summary": "2-sentence positioning summary of ${comp.name} vs Close",
-  "closeWins": ["3-4 short bullets where Close wins vs ${comp.name}"],
-  "compWins": ["2-3 short bullets where ${comp.name} wins vs Close"],
+  "summary": "2-sentence positioning summary of ${comp.name} vs Close, grounded in current market reality",
+  "closeWins": ["3-4 short bullets where Close wins vs ${comp.name}, based on real user feedback"],
+  "compWins": ["2-3 short bullets where ${comp.name} wins vs Close, based on real user feedback"],
   "keyObjection": "Most common objection reps face when prospect is comparing Close to ${comp.name} (1 sentence)",
   "objectionResponse": "Best response to that objection (2-3 sentences)",
-  "recentNews": "Any notable recent product update or market move by ${comp.name} relevant to sales reps (1-2 sentences, if unknown say Not available)",
-  "talkingPoint": "One killer differentiator talking point a Close rep can use (1-2 punchy sentences)"
+  "recentNews": "Specific recent product update or market move found during research (1-2 sentences, include date if known)",
+  "talkingPoint": "One killer differentiator talking point referencing something real users complain about with ${comp.name} (1-2 punchy sentences)",
+  "redditSentiment": "1 sentence summary of what Reddit/community forums say — the unfiltered take",
+  "g2Score": "Current G2 rating and review count if found, otherwise null"
 }
 Return only valid JSON, no markdown, no explanation.`
   const text = await callClaude([{ role: 'user', content: prompt }], true)
@@ -459,7 +469,20 @@ function BattlecardView({ comp }) {
               <p className="ci-bc-text"><strong>Response:</strong> {data.objectionResponse}</p>
             </Section>
             <Section title="Killer talking point"><div className="ci-snippet-box">{data.talkingPoint}</div></Section>
-            <Section title="Recent intel"><p className="ci-bc-text">{data.recentNews}</p></Section>
+            {data.redditSentiment && (
+              <Section title="Reddit sentiment">
+                <div style={{display:'flex',alignItems:'flex-start',gap:8}}>
+                  <span style={{fontSize:11,padding:'2px 7px',borderRadius:4,background:'var(--color-background-warning)',color:'var(--color-text-warning)',whiteSpace:'nowrap',marginTop:1}}>r/ unfiltered</span>
+                  <p className="ci-bc-text" style={{fontSize:12}}>{data.redditSentiment}</p>
+                </div>
+              </Section>
+            )}
+            <Section title="Recent intel">
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
+                <p className="ci-bc-text" style={{flex:1}}>{data.recentNews}</p>
+                {data.g2Score && <span style={{fontSize:11,padding:'2px 8px',borderRadius:4,background:'var(--color-background-success)',color:'var(--color-text-success)',whiteSpace:'nowrap',flexShrink:0}}>G2: {data.g2Score}</span>}
+              </div>
+            </Section>
           </div>
         </div>
       )}
