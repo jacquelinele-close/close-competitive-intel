@@ -779,24 +779,81 @@ export default function App() {
             <div className="ci-subtitle">Close CRM — Sales team battlecards</div>
           </div>
         </div>
-        <button className="ci-bc-btn" style={{fontSize:11}} onClick={async () => {
-          if (!confirm('Regenerate all battlecards? This takes ~2 minutes.')) return
-          const r = await fetch('/api/refresh', { method: 'POST' })
-          const d = await r.json()
-          if (d.success) {
-            // Reload the fresh cache into memory
+        <button className="ci-bc-btn" style={{fontSize:11}} id="refresh-all-btn" onClick={async () => {
+          if (!confirm('Regenerate all battlecards? This takes ~2 minutes but you\'ll see progress as each one completes.')) return
+          const btn = document.getElementById('refresh-all-btn')
+          btn.disabled = true
+          let completed = 0
+          const total = COMPETITORS.length
+          const results = {}
+
+          for (const comp of COMPETITORS) {
+            btn.textContent = `Refreshing ${comp.name}... (${completed}/${total})`
             try {
-              const cacheRes = await fetch('/api/cache')
-              const cacheData = await cacheRes.json()
-              if (cacheData.data) {
-                globalCache.battlecards = cacheData.data
-                globalCache.loadedAt = cacheData.refreshedAt
+              const prompt = `You are a competitive intelligence analyst for Close CRM (close.com) — a sales-focused CRM with built-in power dialer, SMS, email sequences, and Smart Views. Close's ICP is inside sales teams at SMBs and startups doing high-volume outbound.
+
+Before generating the battlecard, search the following sources for current intelligence on ${comp.name}:
+1. G2 reviews — search "site:g2.com ${comp.name} reviews" to find what real users say, common complaints, and pros/cons
+2. Reddit discussions — search "reddit ${comp.name} CRM" to find unfiltered honest opinions from sales/ops people  
+3. General web — any recent news, pricing changes, or product updates about ${comp.name}
+
+Generate a battlecard for ${comp.name} (${comp.category}). Return ONLY a JSON object:
+{
+  "summary": "2-sentence positioning summary vs Close, grounded in current market reality",
+  "closeWins": ["3-4 short bullets where Close wins, based on real user feedback"],
+  "compWins": ["2-3 short bullets where ${comp.name} wins, based on real user feedback"],
+  "keyObjection": "Most common objection when prospect compares Close to ${comp.name} (1 sentence)",
+  "objectionResponse": "Best response (2-3 sentences)",
+  "recentNews": "Specific recent update found during research (1-2 sentences, include date if known)",
+  "talkingPoint": "One killer differentiator referencing what real users complain about with ${comp.name} (1-2 punchy sentences)",
+  "redditSentiment": "1 sentence summary of Reddit/community unfiltered take",
+  "g2Score": "Current G2 rating and review count if found, otherwise null"
+}
+Return only valid JSON, no markdown.`
+
+              const r = await fetch('/api/claude', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  model: 'claude-sonnet-4-20250514',
+                  max_tokens: 1000,
+                  tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+                  messages: [{ role: 'user', content: prompt }]
+                })
+              })
+              const d = await r.json()
+              const text = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('')
+              const match = text.match(/\{[\s\S]*\}/)
+              if (match) {
+                results[comp.id] = { battlecard: JSON.parse(match[0]), generatedAt: new Date().toISOString(), competitor: comp }
+                completed++
+                btn.textContent = `✓ ${comp.name} done (${completed}/${total})`
+                // Update global cache immediately so this competitor loads from cache right away
+                if (!globalCache.battlecards) globalCache.battlecards = {}
+                globalCache.battlecards[comp.id] = results[comp.id]
               }
-            } catch(e) {}
-            alert(`✅ Refreshed ${d.cached} battlecards! Click any competitor to see fresh cached data.`)
-          } else {
-            alert('❌ Refresh failed: ' + (d.error || 'Unknown error'))
+            } catch(e) {
+              console.error(`Failed ${comp.name}:`, e)
+            }
           }
+
+          // Save all to Blob
+          try {
+            btn.textContent = 'Saving to cache...'
+            await fetch('/api/save-cache', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ data: results, refreshedAt: new Date().toISOString() })
+            })
+            btn.textContent = `✅ All ${completed} cached!`
+          } catch(e) {
+            btn.textContent = `✅ ${completed} generated (save failed)`
+          }
+
+          setTimeout(() => {
+            btn.disabled = false
+            btn.innerHTML = '<i class="ti ti-refresh"></i> Refresh all'
+          }, 3000)
         }}>
           <i className="ti ti-refresh" /> Refresh all
         </button>
