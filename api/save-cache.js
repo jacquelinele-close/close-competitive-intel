@@ -1,31 +1,18 @@
-import { put } from '@vercel/blob'
-
 export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '2mb',
-    },
-  },
+  api: { bodyParser: { sizeLimit: '2mb' } }
 }
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
-
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
   try {
     let body = req.body
-    // Handle cases where body might be a string
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body) } catch(e) {}
-    }
+    if (typeof body === 'string') { try { body = JSON.parse(body) } catch(e) {} }
 
     const { data, refreshedAt } = body || {}
-
     if (!data || Object.keys(data).length === 0) {
-      return res.status(400).json({ error: 'No data provided', receivedKeys: Object.keys(body || {}) })
+      return res.status(400).json({ error: 'No data provided' })
     }
 
     const payload = JSON.stringify({
@@ -34,15 +21,29 @@ export default async function handler(req, res) {
       nextRefresh: 'Sunday midnight UTC'
     })
 
-    const blob = await put('battlecards-cache.json', payload, {
-      access: 'public',
-      contentType: 'application/json',
-      addRandomSuffix: false,
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+    const token = process.env.BLOB_READ_WRITE_TOKEN
+    if (!token) return res.status(500).json({ error: 'BLOB_READ_WRITE_TOKEN not set' })
+
+    // Use Vercel Blob REST API directly — no package needed
+    const blobRes = await fetch('https://blob.vercel-storage.com/battlecards-cache.json', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'x-content-type': 'application/json',
+        'x-cache-control': 'public, max-age=0',
+      },
+      body: payload,
     })
 
-    return res.status(200).json({ success: true, blobUrl: blob.url, cached: Object.keys(data).length })
+    if (!blobRes.ok) {
+      const errText = await blobRes.text()
+      return res.status(500).json({ error: `Blob PUT failed: ${blobRes.status}`, detail: errText })
+    }
+
+    const blobData = await blobRes.json()
+    return res.status(200).json({ success: true, blobUrl: blobData.url, cached: Object.keys(data).length })
   } catch (e) {
-    return res.status(500).json({ error: e.message, stack: e.stack?.split('\n')[0] })
+    return res.status(500).json({ error: e.message })
   }
 }
