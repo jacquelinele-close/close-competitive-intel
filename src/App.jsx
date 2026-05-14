@@ -406,24 +406,23 @@ function BattlecardView({ comp }) {
     finally { setLoading(false) }
   }
 
-  // Load blob cache on first mount
+  // Load from blob cache on mount, fall back to live generation
   useEffect(() => {
-    if (!globalCache.battlecards) {
-      fetch('/api/cache')
-        .then(r => r.json())
-        .then(d => {
-          if (d.data) {
+    const tryLoadFromCache = async () => {
+      if (globalCache.battlecards) { load(comp); return }
+      try {
+        const r = await fetch('/api/cache')
+        if (r.ok) {
+          const d = await r.json()
+          if (d.data && Object.keys(d.data).length > 0) {
             globalCache.battlecards = d.data
             globalCache.loadedAt = d.refreshedAt
-            load(comp)
-          } else {
-            load(comp)
           }
-        })
-        .catch(() => load(comp))
-    } else {
+        }
+      } catch (e) { /* cache not available, will generate live */ }
       load(comp)
     }
+    tryLoadFromCache()
   }, [comp.id])
 
   return (
@@ -762,8 +761,16 @@ export default function App() {
           const r = await fetch('/api/refresh', { method: 'POST' })
           const d = await r.json()
           if (d.success) {
-            globalCache.battlecards = null // clear cache so it reloads
-            alert(`✅ Refreshed ${d.cached} battlecards! Reload the page to see fresh data.`)
+            // Reload the fresh cache into memory
+            try {
+              const cacheRes = await fetch('/api/cache')
+              const cacheData = await cacheRes.json()
+              if (cacheData.data) {
+                globalCache.battlecards = cacheData.data
+                globalCache.loadedAt = cacheData.refreshedAt
+              }
+            } catch(e) {}
+            alert(`✅ Refreshed ${d.cached} battlecards! Click any competitor to see fresh cached data.`)
           } else {
             alert('❌ Refresh failed: ' + (d.error || 'Unknown error'))
           }
