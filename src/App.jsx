@@ -1,4 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+
+// Global cache store - shared across all battlecard views
+const globalCache = { battlecards: null, loadedAt: null }
 
 const COMPETITORS = [
   { id: 'hubspot',     name: 'HubSpot',      tier: 1, category: 'All-in-one CRM + marketing',      pricing: 'Free–$800+/mo',         icp: 'SMB to mid-market'          },
@@ -375,19 +378,53 @@ function BattlecardView({ comp }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [ts, setTs] = useState(null)
-  const cache = useRef({})
+  const [fromCache, setFromCache] = useState(false)
+  const localCache = useRef({})
 
   const load = async (c, force = false) => {
-    if (!force && cache.current[c.id]) { setData(cache.current[c.id]); return }
-    setLoading(true); setError(null); setData(null)
+    // 1. Check local session cache first
+    if (!force && localCache.current[c.id]) {
+      setData(localCache.current[c.id]); return
+    }
+    // 2. Check global blob cache
+    if (!force && globalCache.battlecards?.[c.id]?.battlecard) {
+      const cached = globalCache.battlecards[c.id].battlecard
+      localCache.current[c.id] = cached
+      setData(cached)
+      setFromCache(true)
+      setTs(`Cached ${new Date(globalCache.battlecards[c.id].generatedAt).toLocaleDateString()}`)
+      return
+    }
+    // 3. Fall back to live generation
+    setLoading(true); setError(null); setData(null); setFromCache(false)
     try {
       const d = await fetchBattlecard(c)
-      cache.current[c.id] = d; setData(d); setTs(new Date().toLocaleTimeString())
+      localCache.current[c.id] = d
+      setData(d)
+      setTs(new Date().toLocaleTimeString())
     } catch (e) { setError(e.message) }
     finally { setLoading(false) }
   }
 
-  if (!data && !loading && !error) load(comp)
+  // Load blob cache on first mount
+  useEffect(() => {
+    if (!globalCache.battlecards) {
+      fetch('/api/cache')
+        .then(r => r.json())
+        .then(d => {
+          if (d.data) {
+            globalCache.battlecards = d.data
+            globalCache.loadedAt = d.refreshedAt
+            load(comp)
+          } else {
+            load(comp)
+          }
+        })
+        .catch(() => load(comp))
+    } else {
+      load(comp)
+    }
+  }, [comp.id])
 
   return (
     <>
@@ -397,7 +434,10 @@ function BattlecardView({ comp }) {
         <div className="ci-battlecard">
           <div className="ci-bc-header">
             <div><div className="ci-bc-name">{comp.name}</div><div className="ci-bc-meta">{comp.category} · {comp.icp}</div></div>
-            <button className="ci-bc-btn" onClick={() => load(comp, true)}><i className="ti ti-refresh" /> Refresh</button>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              {fromCache && <span style={{fontSize:10,padding:'2px 7px',borderRadius:4,background:'var(--color-background-info)',color:'var(--color-text-info)'}}>⚡ Cached</span>}
+              <button className="ci-bc-btn" onClick={() => load(comp, true)}><i className="ti ti-refresh" /> Refresh</button>
+            </div>
           </div>
           <div className="ci-bc-body">
             <Section title="Positioning summary"><p className="ci-bc-text">{data.summary}</p></Section>
@@ -717,6 +757,19 @@ export default function App() {
             <div className="ci-subtitle">Close CRM — Sales team battlecards</div>
           </div>
         </div>
+        <button className="ci-bc-btn" style={{fontSize:11}} onClick={async () => {
+          if (!confirm('Regenerate all battlecards? This takes ~2 minutes.')) return
+          const r = await fetch('/api/refresh', { method: 'POST' })
+          const d = await r.json()
+          if (d.success) {
+            globalCache.battlecards = null // clear cache so it reloads
+            alert(`✅ Refreshed ${d.cached} battlecards! Reload the page to see fresh data.`)
+          } else {
+            alert('❌ Refresh failed: ' + (d.error || 'Unknown error'))
+          }
+        }}>
+          <i className="ti ti-refresh" /> Refresh all
+        </button>
       </header>
 
       <div className="ci-tabs">
