@@ -1194,27 +1194,27 @@ Return only valid JSON, no markdown.`
         .tier-2{background:rgba(245,200,66,0.15);color:#F5C842}
         .tier-3{background:rgba(75,158,255,0.15);color:#4B9EFF}
         .ci-battlecard{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:12px;overflow:hidden}
-        .ci-bc-header{padding:16px 20px 14px;border-bottom:1px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:flex-start;background:#141414}
-        .ci-bc-name{font-size:18px;font-weight:700;color:var(--color-text-primary);letter-spacing:-0.03em}
+        .ci-bc-header{padding:16px 20px 14px;border-bottom:1px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:flex-start;background:#1A1A1E}
+        .ci-bc-name{font-size:18px;font-weight:700;color:#F0F0F0;letter-spacing:-0.03em}
         .ci-bc-meta{font-size:12px;color:var(--color-text-tertiary);margin-top:2px}
         .ci-bc-actions{display:flex;gap:6px;align-items:center}
         .ci-bc-btn{font-size:12px;padding:5px 11px;border:1px solid var(--color-border-secondary);border-radius:6px;background:transparent;color:var(--color-text-secondary);cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-family:inherit;font-weight:500;transition:background 0.1s,border-color 0.1s,color 0.1s;white-space:nowrap;text-decoration:none}
-        .ci-bc-btn:hover{background:var(--color-background-secondary);border-color:var(--color-border-primary);color:var(--color-text-primary)}
+        .ci-bc-btn:hover{background:var(--color-background-secondary);border-color:var(--color-border-primary);color:#F0F0F0}
         .ci-bc-btn:disabled{opacity:0.4;cursor:not-allowed}
         .ci-bc-body{padding:18px 20px}
         .ci-bc-section{margin-bottom:18px}
         .ci-bc-section:last-child{margin-bottom:0}
         .ci-bc-section-title{font-size:10px;font-weight:700;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:9px}
-        .ci-bc-text{font-size:13px;color:var(--color-text-secondary);line-height:1.65}
+        .ci-bc-text{font-size:13px;color:#B0B0B8;line-height:1.65}
         .ci-bc-pills{display:flex;flex-wrap:wrap;gap:6px}
         .ci-pill{font-size:12px;padding:4px 11px;border-radius:20px;border:none;font-weight:500}
         .ci-pill.win{background:rgba(60,200,138,0.15);color:#3CC88A}
         .ci-pill.lose{background:rgba(255,107,107,0.15);color:#FF6B6B}
         .ci-bc-pricing-row{display:flex;gap:10px;flex-wrap:wrap}
-        .ci-price-box{flex:1;min-width:130px;background:#141414;border-radius:6px;padding:11px 14px;border:1px solid var(--color-border-tertiary)}
+        .ci-price-box{flex:1;min-width:130px;background:#1A1A1E;border-radius:6px;padding:11px 14px;border:1px solid var(--color-border-tertiary)}
         .ci-price-label{font-size:10px;font-weight:700;color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em}
-        .ci-price-val{font-size:15px;font-weight:700;color:var(--color-text-primary);letter-spacing:-0.02em}
-        .ci-snippet-box{background:#141414;border-radius:6px;padding:13px 15px;font-size:13px;color:var(--color-text-secondary);line-height:1.65;position:relative;border:1px solid var(--color-border-tertiary)}
+        .ci-price-val{font-size:15px;font-weight:700;color:#F0F0F0;letter-spacing:-0.02em}
+        .ci-snippet-box{background:#1A1A1E;border-radius:6px;padding:13px 15px;font-size:13px;color:#B0B0B8;line-height:1.65;position:relative;border:1px solid var(--color-border-tertiary)}
         .ci-copy-btn{position:absolute;top:8px;right:8px;background:var(--color-background-secondary);border:1px solid var(--color-border-secondary);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;color:var(--color-text-secondary);display:inline-flex;align-items:center;gap:3px;font-family:inherit;font-weight:500}
         .ci-copy-btn:hover{border-color:var(--color-border-primary);color:var(--color-text-primary)}
         .ci-loading{display:flex;align-items:center;gap:10px;padding:28px 0;font-size:13px;color:var(--color-text-tertiary)}
