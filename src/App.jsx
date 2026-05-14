@@ -1,7 +1,30 @@
 import { useState, useRef, useEffect } from 'react'
 
-// Global cache store - shared across all battlecard views
-const globalCache = { battlecards: null, loadedAt: null }
+// Cache helpers using localStorage for persistence across page loads
+const CACHE_KEY = 'close_ci_battlecards'
+const CACHE_TTL = 7 * 24 * 60 * 60 * 1000 // 7 days
+
+function loadCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (Date.now() - new Date(parsed.savedAt).getTime() > CACHE_TTL) {
+      localStorage.removeItem(CACHE_KEY)
+      return null
+    }
+    return parsed.data
+  } catch(e) { return null }
+}
+
+function saveCache(data) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ data, savedAt: new Date().toISOString() }))
+  } catch(e) { console.warn('Cache save failed:', e) }
+}
+
+// In-memory cache for current session
+const globalCache = { battlecards: loadCache(), loadedAt: null }
 
 const COMPETITORS = [
   { id: 'hubspot',     name: 'HubSpot',      tier: 1, category: 'All-in-one CRM + marketing',      pricing: 'Free–$800+/mo',         icp: 'SMB to mid-market'          },
@@ -396,7 +419,7 @@ function BattlecardView({ comp }) {
     if (!force && localCache.current[c.id]) {
       setData(localCache.current[c.id]); return
     }
-    // 2. Check global blob cache
+    // 2. Check global cache (loaded from localStorage on startup)
     if (!force && globalCache.battlecards?.[c.id]?.battlecard) {
       const cached = globalCache.battlecards[c.id].battlecard
       localCache.current[c.id] = cached
@@ -410,29 +433,19 @@ function BattlecardView({ comp }) {
     try {
       const d = await fetchBattlecard(c)
       localCache.current[c.id] = d
+      // Save to global cache and persist to localStorage
+      if (!globalCache.battlecards) globalCache.battlecards = {}
+      globalCache.battlecards[c.id] = { battlecard: d, generatedAt: new Date().toISOString(), competitor: c }
+      saveCache(globalCache.battlecards)
       setData(d)
       setTs(new Date().toLocaleTimeString())
     } catch (e) { setError(e.message) }
     finally { setLoading(false) }
   }
 
-  // Load from blob cache on mount, fall back to live generation
+  // Load from localStorage cache on mount, fall back to live generation
   useEffect(() => {
-    const tryLoadFromCache = async () => {
-      if (globalCache.battlecards) { load(comp); return }
-      try {
-        const r = await fetch('/api/cache')
-        if (r.ok) {
-          const d = await r.json()
-          if (d.data && Object.keys(d.data).length > 0) {
-            globalCache.battlecards = d.data
-            globalCache.loadedAt = d.refreshedAt
-          }
-        }
-      } catch (e) { /* cache not available, will generate live */ }
-      load(comp)
-    }
-    tryLoadFromCache()
+    load(comp)
   }, [comp.id])
 
   return (
@@ -837,14 +850,11 @@ Return only valid JSON, no markdown.`
             }
           }
 
-          // Save all to Blob
+          // Save all to localStorage for persistence
           try {
             btn.textContent = 'Saving to cache...'
-            await fetch('/api/save-cache', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ data: results, refreshedAt: new Date().toISOString() })
-            })
+            globalCache.battlecards = results
+            saveCache(results)
             btn.textContent = `✅ All ${completed} cached!`
           } catch(e) {
             btn.textContent = `✅ ${completed} generated (save failed)`
