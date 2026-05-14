@@ -1,5 +1,3 @@
-import { put } from '@vercel/blob'
-
 const COMPETITORS = [
   { id: 'hubspot',     name: 'HubSpot',      category: 'All-in-one CRM + marketing',      pricing: 'Free–$800+/mo'      },
   { id: 'salesforce',  name: 'Salesforce',   category: 'Enterprise CRM',                  pricing: '$25–$500+/user/mo'  },
@@ -91,25 +89,36 @@ export default async function handler(req, res) {
     }
   }
 
-  // Save to Vercel Blob
+  // Save to Vercel Blob using REST API directly
   try {
-    const blob = await put('battlecards-cache.json', JSON.stringify({
+    const token = process.env.BLOB_READ_WRITE_TOKEN
+    const payload = JSON.stringify({
       data: results,
       refreshedAt: new Date().toISOString(),
       nextRefresh: 'Sunday midnight UTC'
-    }), {
-      access: 'public', // public URL but content is not sensitive (no CRM data)
-      contentType: 'application/json',
-      addRandomSuffix: false, // keep same URL every time
     })
 
-    console.log(`Cache saved to: ${blob.url}`)
+    const blobRes = await fetch('https://blob.vercel-storage.com/battlecards-cache.json', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'x-content-type': 'application/json',
+      },
+      body: payload,
+    })
 
+    if (!blobRes.ok) {
+      const errText = await blobRes.text()
+      return res.status(500).json({ error: `Blob save failed: ${blobRes.status}`, detail: errText })
+    }
+
+    const blobData = await blobRes.json()
     return res.status(200).json({
       success: true,
       cached: Object.keys(results).length,
       errors,
-      blobUrl: blob.url,
+      blobUrl: blobData.url,
       refreshedAt: new Date().toISOString()
     })
   } catch (e) {
