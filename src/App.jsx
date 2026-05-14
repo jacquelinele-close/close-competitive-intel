@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react'
 
 // Cache helpers using localStorage for persistence across page loads
@@ -364,7 +365,9 @@ Generate a battlecard for ${comp.name} (${comp.category}). Return ONLY a JSON ob
   "g2Score": "Current G2 rating and review count if found, otherwise null"
 }
 Return only valid JSON, no markdown, no explanation.`
-  const text = await callClaude([{ role: 'user', content: prompt }], true)
+  const raw = await callClaude([{ role: 'user', content: prompt }], true)
+  // Strip citation markup that leaks from web search results
+  const text = raw.replace(/<cite[^>]*>|<\/cite>/g, '')
   const match = text.match(/\{[\s\S]*\}/)
   if (!match) throw new Error('Could not parse response')
   return JSON.parse(match[0])
