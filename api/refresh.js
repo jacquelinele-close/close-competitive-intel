@@ -13,15 +13,25 @@ const COMPETITORS = [
 async function generateBattlecard(comp, apiKey) {
   const prompt = `You are a competitive intelligence analyst for Close CRM (close.com) — a sales-focused CRM with built-in power dialer, SMS, email sequences, and Smart Views. Close's ICP is inside sales teams at SMBs and startups doing high-volume outbound.
 
+Before generating the battlecard, search the following sources for current intelligence on ${comp.name}:
+1. G2 reviews — search "site:g2.com ${comp.name} reviews" to find what real users say, common complaints, and pros/cons
+2. Reddit discussions — search "reddit ${comp.name} CRM" to find unfiltered honest opinions from sales/ops people
+3. LinkedIn — search "${comp.name} CRM" for recent product announcements, feature launches, and executive posts
+4. General web — any recent news, pricing changes, or product updates about ${comp.name}
+
+Use what you find to make the battlecard as specific and current as possible. Quote or reference real user sentiment where relevant.
+
 Generate a battlecard for ${comp.name} (${comp.category}). Return ONLY a JSON object with these exact keys:
 {
-  "summary": "2-sentence positioning summary of ${comp.name} vs Close",
-  "closeWins": ["3-4 short bullets where Close wins vs ${comp.name}"],
-  "compWins": ["2-3 short bullets where ${comp.name} wins vs Close"],
-  "keyObjection": "Most common objection reps face when prospect is comparing Close to ${comp.name} (1 sentence)",
+  "summary": "2-sentence positioning summary of ${comp.name} vs Close, grounded in current market reality",
+  "closeWins": ["3-4 short bullets where Close wins vs ${comp.name}, based on real user feedback and reviews"],
+  "compWins": ["2-3 short bullets where ${comp.name} wins vs Close, based on real user feedback"],
+  "keyObjection": "Most common objection reps face when prospect is comparing Close to ${comp.name}, based on what real users say online (1 sentence)",
   "objectionResponse": "Best response to that objection (2-3 sentences)",
-  "recentNews": "Any notable recent product update or market move by ${comp.name} relevant to sales reps (1-2 sentences)",
-  "talkingPoint": "One killer differentiator talking point a Close rep can use (1-2 punchy sentences)"
+  "recentNews": "Specific recent product update, pricing change, or market move by ${comp.name} found during research (1-2 sentences, include approximate date if known)",
+  "talkingPoint": "One killer differentiator talking point a Close rep can use, ideally referencing something real users complain about with ${comp.name} (1-2 punchy sentences)",
+  "redditSentiment": "1 sentence summary of what Reddit/community forums say about ${comp.name} — the unfiltered take",
+  "g2Score": "Current G2 rating and number of reviews if found, otherwise null"
 }
 Return only valid JSON, no markdown, no explanation.`
 
